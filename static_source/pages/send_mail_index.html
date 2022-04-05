@@ -1,0 +1,241 @@
+<script src="/static/vue.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/wangeditor@latest/dist/wangEditor.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.12/lib/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/vant@2.12/lib/vant.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<div id="app">
+  <div style="width: 1200px; margin: 0 auto;">
+    <div style="padding: 20px 0px;">
+      <el-button @click="showAddPane = true">新增发件人</el-button>
+      <el-button @click="onEditReceivers">修改</el-button>
+    </div>
+    <el-table :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55">
+      </el-table-column>
+      <el-table-column prop="creationTime" label="创建时间" width="180">
+      </el-table-column>
+      <el-table-column prop="sender" label="发件人" width="400">
+      </el-table-column>
+      <el-table-column prop="sendTime" label="发件时间" width="180">
+      </el-table-column>
+      <el-table-column prop="isSend" label="是否已发" width="180">
+      </el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-button @click="viewReceivers(scope.row)" type="text" size="small">查看详情</el-button>
+          <el-button @click="deleteSender(scope.row.sender)" type="text" size="small">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <van-popup v-model="showAddPane">
+      <div style="padding: 30px; width: 800px;">
+        <h3>POP3/SMTP服务配置</h3>
+        <el-form :model="addSenderForm">
+          <el-form-item label="发件人邮件地址">
+            <el-input v-model="addSenderForm.email"></el-input>
+          </el-form-item>
+          <el-form-item label="发件服务器地址">
+            <el-input v-model="addSenderForm.emailServer"></el-input>
+          </el-form-item>
+          <el-form-item label="发件服务器端口">
+            <el-input v-model="addSenderForm.emailServerPort"></el-input>
+          </el-form-item>
+          <el-form-item label="发件服务器用户">
+            <el-input v-model="addSenderForm.emailServerUser"></el-input>
+          </el-form-item>
+          <el-form-item label="发件服务器密码">
+            <el-input v-model="addSenderForm.emailServerPassword"></el-input>
+          </el-form-item>
+          <el-form-item label="测试接收邮件地址（测试能否正常收到邮件）">
+            <el-input v-model="addSenderForm.emailTestReceiver"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="addSender">确定</el-button>
+            <el-button type="primary" @click="testSender">发件测试</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </van-popup>
+
+
+    <van-popup v-model="editReceivers" @close="editor.destroy()">
+      <div style="padding: 30px; width: 800px; position: relative;">
+        <el-form :model="editReceiversForm" style="z-index:990">
+          <el-form-item label="发件时间" prop="sendTime" style="z-index:990">
+            <el-date-picker popper-class="datep" align="right" value-format="yyyy-MM-dd HH:mm:ss"
+              v-model="editReceiversForm.sendTime" type="datetime" placeholder="选择日期时间">
+            </el-date-picker>
+          </el-form-item>
+          <el-form-item label="收件人列表" prop="receivers">
+            <el-input type="textarea" v-model="editReceiversForm.receivers"></el-input>
+          </el-form-item>
+          <el-form-item label="邮件主题" prop="subject">
+            <el-input v-model="editReceiversForm.subject"></el-input>
+          </el-form-item>
+          <el-form-item label="邮件内容" prop="content"></el-form-item>
+          <div ref="content" style="width: 100%; height: 500px;"></div>
+          <el-form-item>
+            <el-button type="primary" @click="editSender">确定</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </van-popup>
+
+    <van-popup v-model="showReceivers" @close="editor.destroy()">
+      <div style="padding: 30px; width: 800px;">
+        <el-input type="textarea" rows="5" :readonly="true" v-model="receivers"></el-input>
+        <div ref="contentV" style="width: 100%; height: 400px; margin-top: 10px;"></div>
+      </div>
+    </van-popup>
+
+  </div>
+</div>
+
+<script>
+  new Vue({
+    el: '#app',
+    data: function () {
+      return {
+        tableData: [],
+        senders: {},
+        showAddPane: false,
+        addSenderForm: {
+          email: '',
+          emailServer: '',
+          emailServerPort: '',
+          emailServerUser: '',
+          emailServerPassword: '',
+          emailTestReceiver: '',
+        },
+        editReceivers: false,
+        editReceiversForm: {
+          senders: [],
+          sendTime: '',
+          receivers: '',
+          content: '',
+          subject: '',
+        },
+        selectedSenders: [],
+        showReceivers: false,
+        receivers: '',
+        editor: null,
+      }
+    },
+    mounted() {
+      this.updateTableData();
+    },
+    methods: {
+      onEditReceivers() {
+        this.editReceivers = true;
+        setTimeout(() => {
+          const editor = this.createEditor(this.$refs.content);
+
+          editor.config.showLinkImg = false
+          // 配置 onchange 回调函数
+          editor.config.onchange = (newHtml) => {
+            this.editReceiversForm.content = newHtml;
+          };
+          // 配置触发 onchange 的时间频率，默认为 200ms
+          editor.config.onchangeTimeout = 500; // 修改为 500ms
+
+          this.editor = editor;
+        }, 500)
+      },
+      editSender() {
+        this.editReceiversForm.senders = this.selectedSenders;
+        axios({
+          url: "/editSender",
+          method: "post",
+          data: this.editReceiversForm
+        }).then(rsp => {
+          this.editReceivers = false;
+          this.updateTableData();
+        });
+      },
+      handleSelectionChange(val) {
+        this.selectedSenders = val.map(it => it.sender);
+      },
+      createEditor(elem) {
+        const E = window.wangEditor
+        const editor = new E(elem);
+        editor.config.uploadImgServer = '/uploadimg'
+        editor.create();
+        return editor;
+      },
+      viewReceivers(row) {
+        this.showReceivers = true;
+        this.receivers = this.senders[row.sender].receivers;
+
+        setTimeout(() => {
+          const editor = this.createEditor(this.$refs.contentV);
+          editor.config.showLinkImg = false;
+          editor.disable();
+          editor.txt.html(this.senders[row.sender].content);
+          this.editor = editor;
+        }, 500)
+      },
+      deleteSender(email) {
+        axios({
+          url: "/delete",
+          method: "post",
+          data: {
+            email: email,
+          }
+        }).then(rsp => {
+          this.updateTableData();
+        })
+      },
+      updateTableData() {
+        axios({
+          url: "/getSenders",
+          method: 'get',
+        }).then(rsp => {
+          console.log(rsp.data);
+          this.senders = rsp.data;
+          const datas = [];
+          Object.keys(rsp.data).forEach(email => {
+            const data = this.senders[email];
+            datas.push({
+              creationTime: data.creationTime,
+              sender: email,
+              sendTime: data.sendTime,
+              isSend: data.isSend ? '是' : '否',
+            })
+          });
+          this.tableData = datas;
+        })
+      },
+      addSender() {
+        axios({
+          url: "/addSender",
+          method: 'post',
+          data: this.addSenderForm
+        }).then(rsp => {
+          this.updateTableData();
+          this.showAddPane = false;
+        });
+      },
+      testSender(){
+        axios({
+          url: "/test",
+          method: 'post',
+          data: this.addSenderForm
+        }).then(rsp => {
+          alert('成功发件，请检查是否收到邮件')
+        }).catch(rsp=>{
+          alert('失败！！请检查发件服务器是否配置正确！')
+        })
+      },
+    }
+  })
+</script>
+
+<style>
+  .datep {
+    z-index: 99999 !important;
+  }
+</style>

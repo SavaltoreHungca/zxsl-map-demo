@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/static/leaflet.1.7.1.css" />
+<link rel="stylesheet" href="/static/leaflet_measure_path.css" />
+<link rel="stylesheet" href="/static/leaflet_minimap.css" />
+<link rel="stylesheet" href="/static/leaflet_geosearch.css" />
+<link rel="stylesheet" href="/static/leaflet_box_zoom.css" />
+<link rel="stylesheet" href="/static/ionicons.css" />
+<link rel="stylesheet" href="/static/leaflet_awsome_marker.css" />
+<link rel="stylesheet" href="/static/font-awesome-4.7.0/css/font-awesome.css" />
+<link rel="stylesheet" href="/static/leaflet.draw-src.css" />
+<link rel="stylesheet" href="/static/leaflet_slider.css" />
+<link rel="stylesheet" href="/static/leaflet_sliderbar.css" />
+
+<script src="/static/leaflet-src.js"></script>
+<!-- <script src="/static/leaflet1.7.1.min.js"></script> -->
+<script src="/static/turf6.5.0.js"></script>
+<script src="/static/axios.js"></script>
+<script src="/static/leaflet_measure_path.js"></script>
+<script src="/static/leaflet_editable.js"></script>
+<script src="/static/leaflet_dash_flow.js"></script>
+<script src="/static/leaflet_river.js"></script>
+<script src="/static/d3.min.js"></script>
+<script src="/static/topojson.min.js"></script>
+<script src="/static/global_minimap.js"></script>
+<script src="/static/leaflet_minimap.js"></script>
+<script src="/static/leaflet_geosearch.js"></script>
+<script src="/static/leaflet_box_zoom.js"></script>
+<script src="/static/leaflet_awsome_marker.js"></script>
+<script src="/static/leaflet.draw-src.js"></script>
+<script src="/static/leaflet_buffer.js"></script>
+<script src="/static/leaflet_slider.js"></script>
+<script src="/static/leaflet_sliderbar.js"></script>
+<script src="/static/leaflet_horman.js"></script>
+
+
+
+<style>
+    html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+
+    button {
+        margin: 1px;
+    }
+
+    .leaflet-cursor-pointer {
+        cursor: default;
+        /* cursor:url('../images/myCursor.png'), auto} */
+    }
+
+    .mypopup .leaflet-popup-content-wrapper {
+        width: 33px;
+        height: 33px;
+        border-radius: 50%;
+        border: 55px solid rgb(83, 115, 145);
+        background-color: rgba(0, 0, 0, 0.24);
+    }
+
+    .mypopup .leaflet-popup-content {
+        left: -26px;
+        top: -22px;
+        position: absolute;
+    }
+
+    .mypopup .leaflet-popup-close-button {
+        left: 61px;
+        top: 60px !important;
+        font-size: 28px !important;
+        color: black !important;
+    }
+
+    .cd-span {
+        position: absolute;
+        width: 30px;
+        font-size: 14px;
+        text-align: center;
+        line-height: 15px;
+        cursor: pointer;
+    }
+
+    .cd-span:nth-child(1) {
+        color: #fff;
+        top: 13px;
+        left: 65px;
+    }
+
+    .cd-span:nth-child(1):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(1):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(40px, 41px, 0px) rotate(-33deg);
+    }
+
+    .cd-span:nth-child(2) {
+        color: #fff;
+        top: 92px;
+        left: 20px;
+    }
+
+    .cd-span:nth-child(2):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(2):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-6px, -39px, 0px) rotate(30deg);
+    }
+
+    .cd-span:nth-child(3) {
+        color: #fff;
+        top: 92px;
+        left: 110px;
+    }
+
+    .cd-span:nth-child(3):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(3):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-50px, 40px, 0px) rotate(-90deg);
+    }
+</style>
+
+<div id="map" style="height: 100%; width: 100%;"></div>
+<div id="sidebar" class="sidebar collapsed"
+    style="left: 8px;height: 207px;bottom: 4px;top: auto;border-radius: 11px 11px;">
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+            <li class="disabled"><a href="#messages" role="tab"><i class="fa fa-envelope"></i></a></li>
+        </ul>
+
+        <ul role="tablist">
+            <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+        </ul>
+    </div>
+
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+        <div class="sidebar-pane" id="home">
+            <h1 class="sidebar-header">
+                操作手册
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <p>
+                点击此处按钮：<button
+                    onclick="drawIntersection();(window.event || arguments.callee.caller.arguments[0]).stopPropagation()">区县内的河流着色</button>。
+                点击后：流经区县的河流会被着色，不同去区县上不同色，颜色随机。
+            </p>
+
+        </div>
+
+        <div class="sidebar-pane" id="messages">
+            <h1 class="sidebar-header">Messages<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+
+        <div class="sidebar-pane" id="settings">
+            <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            <p>无需任何设置！</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    var map = L.map('map', {
+        // center: [43.766631, 125.37735],
+        center: [29.556734, 106.54541],
+        zoom: 12,
+        attributionControl: false,
+        editable: true,
+        // preferCanvas: true,
+    });
+    L.DomUtil.addClass(map._container, 'leaflet-cursor-pointer');
+    map.createPane("regionsPane");
+    map.createPane("under")
+    map.createPane("underWaterPane")
+    map.createPane("uuPane");
+    map.createPane("waterPane");
+    map.createPane("tipsPane");
+    map.createPane("topPane");
+
+    let dp = L.polygon(
+        [
+            [44.394542, 127.611694],
+            [44.313491, 126.687634],
+
+            [44.3147, 127.330125],
+            [44.140294, 126.934826],
+        ]
+    ).addTo(map).bindPopup('我比较方便观察！', {
+        autoClose: false,
+        closeOnClick: false,
+    }).openPopup();
+    window.allWaterLayer = [];
+    window.allRegionLayer = [dp.toGeoJSON()];
+
+
+    function drawIntersection() {
+        let usedColor = new Set();
+        var getRandomColor = function () {
+            let ans = '#' + (function (color) {
+                return (color += '0123456789abcdef'[Math.floor(Math.random() * 16)])
+                    && (color.length == 6) ? color : arguments.callee(color);
+            })('');
+            if (usedColor.has(ans)) {
+                return getRandomColor();
+            } else {
+                usedColor.add(ans);
+                return ans;
+            }
+        };
+
+        allRegionLayer.forEach(feature => {
+            let c = getRandomColor();
+            feature.mycolor = c;
+            if (feature.geometry) {
+                feature.geometry.mycolor = c;
+            }
+        });
+
+        function convertM2L(feature) {
+            if (feature.geometry) {
+                feature = feature.geometry;
+            }
+            if (feature.type === 'MultiLineString') {
+                return feature.coordinates.map(i => {
+                    return turf.lineString(i);
+                });
+            }
+            if (feature.type === "MultiPolygon") {
+                return feature.coordinates.map(i => {
+                    let ans = turf.polygon(i);
+                    ans.mycolor = feature.mycolor;
+                    return ans;
+                });
+            }
+            return [feature];
+        }
+
+        function genRiver(feature, mycolor) {
+            // L.geoJSON(feature, {
+            //     color: mycolor,
+            //     fillColor: mycolor,
+            //     pane: 'uuPane',
+            // }).addTo(map);
+            L.geoJSON(feature, {
+                color: mycolor,
+                fillColor: mycolor,
+                pane: 'waterPane',
+                weight: 3,
+                // onEachFeature: (feature, layer) => {
+                //     if (!layer.options['dashArray']) {
+                //         layer.options['dashArray'] = '15 15';
+                //         layer.options['dashSpeed'] = 30;
+                //         layer.beforeAdd(map);
+                //     }
+                // }
+            }).addTo(map);
+        }
+
+        function overl(pl, po) {
+            let split = turf.lineSplit(pl, po);
+            if (split.features.length > 0) {
+                split.features.forEach((splitedPart, i) => {
+                    if (turf.booleanPointInPolygon(turf.center(splitedPart), po)) {
+                        genRiver(splitedPart.geometry, po.mycolor);
+                    }
+                });
+                return true;
+            }
+
+
+            return false;
+        }
+
+        for (let i = 0; i < allWaterLayer.length; i++) {
+            convertM2L(allWaterLayer[i]).forEach(pl => {
+                for (let j = 0; j < allRegionLayer.length; j++) {
+                    convertM2L(allRegionLayer[j]).forEach(po => {
+                        overl(pl, po);
+                        if (turf.booleanContains(po, pl)) {
+                            genRiver(pl, po.mycolor);
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+
+    function setLayers(map) {
+        var grayscale = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, });
+
+
+        let setRegionsLayer = () => {
+            let geoLayer = L.geoJson(null, {
+                pane: "regionsPane",
+                onEachFeature: (feature, layer) => {
+                    allRegionLayer.push(feature);
+                }
+            });
+
+            geoLayer.fitStyle = () => {
+                let index = -1;
+                geoLayer.setStyle((feature) => {
+                    let getColor = (d) => {
+                        let colors = ['#800026', '#BD0026', '#E31A1C', '#FC4E2A', '#FD8D3C', '#FEB24C', '#FED976', '#FFEDA0'];
+                        if (index >= colors.length) {
+                            index = -1;
+                        }
+                        index++;
+                        return 'white';
+                    }
+                    return {
+                        fillColor: getColor(feature),
+                        weight: 1,
+                        opacity: 0.7,
+                        color: 'red',
+                        dashArray: '3',
+                        fillOpacity: 0,
+                        zIndexOffset: 1,
+                    };
+                });
+            };
+
+            axios.get("/jd")
+                .then(rsp => {
+                    geoLayer.addData(rsp.data);
+                    geoLayer.fitStyle();
+                });
+            return geoLayer;
+        }
+
+        var regionLayer = setRegionsLayer();
+
+        let setWaterLayer = () => {
+            return L.layerGroup([
+                (() => {
+                    let geoLayer2 = L.geoJson(null, {
+                        pane: "underWaterPane",
+                        onEachFeature: (feature, layer) => {
+                            if (!layer.options['dashArray']) {
+                                layer.options['dashArray'] = '15 15';
+                                layer.options['dashSpeed'] = 30;
+                                layer.beforeAdd(map);
+                            }
+                            allWaterLayer.push(feature);
+                        }
+                    });
+                    geoLayer2.fitStyle = () => {
+                        geoLayer2.setStyle((feature) => {
+                            return {
+                                weight: 2,
+                            };
+                        });
+                    }
+                    axios.get("/jd2")
+                        .then(rsp => {
+                            geoLayer2.addData(rsp.data);
+                            geoLayer2.fitStyle();
+                        });
+                    return geoLayer2;
+                })(),
+                (() => {
+                    let geoLayer2 = L.geoJson(null, {
+                        pane: "under",
+                    });
+                    geoLayer2.fitStyle = () => {
+                        geoLayer2.setStyle((feature) => {
+                            return {
+                                weight: 1,
+                            };
+                        });
+                    }
+                    axios.get("/jd2")
+                        .then(rsp => {
+                            geoLayer2.addData(rsp.data);
+                            geoLayer2.fitStyle();
+                        });
+                    return geoLayer2;
+                })()
+            ]);;
+        }
+
+        var waterLayer = setWaterLayer();
+
+        map.setView([44.268805, 125.672607], 8);
+        map.addLayer(waterLayer);
+        map.addLayer(regionLayer);
+        grayscale.addTo(map);
+    }
+
+    setLayers(map);
+    var sidebar = L.control.sidebar('sidebar').addTo(map).open('home');
+</script>

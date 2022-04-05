@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/static/leaflet.1.7.1.css" />
+<link rel="stylesheet" href="/static/leaflet_measure_path.css" />
+<link rel="stylesheet" href="/static/leaflet_minimap.css" />
+<link rel="stylesheet" href="/static/leaflet_geosearch.css" />
+<link rel="stylesheet" href="/static/leaflet_box_zoom.css" />
+<link rel="stylesheet" href="/static/ionicons.css" />
+<link rel="stylesheet" href="/static/leaflet_awsome_marker.css" />
+<link rel="stylesheet" href="/static/font-awesome-4.7.0/css/font-awesome.css" />
+<link rel="stylesheet" href="/static/leaflet.draw-src.css" />
+<link rel="stylesheet" href="/static/leaflet_slider.css" />
+<link rel="stylesheet" href="/static/leaflet_sliderbar.css" />
+
+<script src="/static/leaflet-src.js"></script>
+<!-- <script src="/static/leaflet1.7.1.min.js"></script> -->
+<script src="/static/turf6.5.0.js"></script>
+<script src="/static/axios.js"></script>
+<script src="/static/leaflet_measure_path.js"></script>
+<script src="/static/leaflet_editable.js"></script>
+<script src="/static/leaflet_dash_flow.js"></script>
+<script src="/static/leaflet_river.js"></script>
+<script src="/static/d3.min.js"></script>
+<script src="/static/topojson.min.js"></script>
+<script src="/static/global_minimap.js"></script>
+<script src="/static/leaflet_minimap.js"></script>
+<script src="/static/leaflet_geosearch.js"></script>
+<script src="/static/leaflet_box_zoom.js"></script>
+<script src="/static/leaflet_awsome_marker.js"></script>
+<script src="/static/leaflet.draw-src.js"></script>
+<script src="/static/leaflet_buffer.js"></script>
+<script src="/static/leaflet_slider.js"></script>
+<script src="/static/leaflet_sliderbar.js"></script>
+
+
+
+<style>
+    html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+
+    button {
+        margin: 1px;
+    }
+
+    .leaflet-cursor-pointer {
+        cursor: default;
+        /* cursor:url('../images/myCursor.png'), auto} */
+    }
+
+    .mypopup .leaflet-popup-content-wrapper {
+        width: 33px;
+        height: 33px;
+        border-radius: 50%;
+        border: 55px solid rgb(83, 115, 145);
+        background-color: rgba(0, 0, 0, 0.24);
+    }
+
+    .mypopup .leaflet-popup-content {
+        left: -26px;
+        top: -22px;
+        position: absolute;
+    }
+
+    .mypopup .leaflet-popup-close-button {
+        left: 61px;
+        top: 60px !important;
+        font-size: 28px !important;
+        color: black !important;
+    }
+
+    .cd-span {
+        position: absolute;
+        width: 30px;
+        font-size: 14px;
+        text-align: center;
+        line-height: 15px;
+        cursor: pointer;
+    }
+
+    .cd-span:nth-child(1) {
+        color: #fff;
+        top: 13px;
+        left: 65px;
+    }
+
+    .cd-span:nth-child(1):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(1):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(40px, 41px, 0px) rotate(-33deg);
+    }
+
+    .cd-span:nth-child(2) {
+        color: #fff;
+        top: 92px;
+        left: 20px;
+    }
+
+    .cd-span:nth-child(2):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(2):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-6px, -39px, 0px) rotate(30deg);
+    }
+
+    .cd-span:nth-child(3) {
+        color: #fff;
+        top: 92px;
+        left: 110px;
+    }
+
+    .cd-span:nth-child(3):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(3):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-50px, 40px, 0px) rotate(-90deg);
+    }
+</style>
+
+<div id="map" style="height: 100%; width: 100%;"></div>
+<div id="sidebar" class="sidebar collapsed"
+    style="left: 8px;height: 207px;bottom: 4px;top: auto;border-radius: 11px 11px;">
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+            <li><a href="#profile" role="tab"><i class="fa fa-user"></i></a></li>
+            <li class="disabled"><a href="#messages" role="tab"><i class="fa fa-envelope"></i></a></li>
+        </ul>
+
+        <ul role="tablist">
+            <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+        </ul>
+    </div>
+
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+        <div class="sidebar-pane" id="home">
+            <h1 class="sidebar-header">
+                操作手册
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <p>
+                点击右侧<button
+                    onclick="loadManyMarkers();(window.event || arguments.callee.caller.arguments[0]).stopPropagation()">加载很多断面和污染源</button>
+                    （这里点也行），然后使用左上角的工具栏画个图，后面按照提示操作即可！
+            </p>
+
+        </div>
+
+        <div class="sidebar-pane" id="profile">
+            <h1 class="sidebar-header">缓冲区内的要素<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            <div id="profile_c"></div>
+        </div>
+
+        <div class="sidebar-pane" id="messages">
+            <h1 class="sidebar-header">Messages<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+
+        <div class="sidebar-pane" id="settings">
+            <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            <p>无需任何设置！</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    var addAnchor = false;
+    var addCircle = false;
+    var drawRegion = false;
+
+    var map = L.map('map', {
+        // center: [43.766631, 125.37735],
+        center: [44.268805, 125.672607],
+        zoom: 12,
+        attributionControl: false,
+        zoomControl: false,
+        editable: true,
+    });
+    L.DomUtil.addClass(map._container, 'leaflet-cursor-pointer');
+    map.createPane("regionsPane");
+    map.createPane("waterPane");
+    map.createPane("tipsPane");
+    map.createPane("topPane");
+
+    function setLayers(map) {
+        var streets = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1, });
+        var wmsWater = L.tileLayer.wms("http://119.84.240.12:8096/geoserver/changchun-water/wms?", {
+            layers: 'changchun-water:长春测试水系',
+            format: 'image/png',
+            transparent: true,
+            pane: "waterPane",
+        }).on('add', () => map.setView([44.268805, 125.672607]));
+        var grayscale = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, });
+
+        var layers = L.control.layers(
+            {
+                "街道图": streets,
+                "灰度图": grayscale,
+                "水系": wmsWater,
+            },
+            {
+
+            },
+            {
+                collapsed: false,
+                autoZIndex: false,
+            }
+        );
+
+        map.addLayer(streets);
+        layers.addTo(map);
+    }
+
+    function setControl(map) {
+        let control = null;
+
+        window.allMarkers = [];
+        let count = 1;
+        window.loadManyMarkers = () => {
+            let icons = [
+                L.AwesomeMarkers.icon({ icon: 'spinner', prefix: 'fa', markerColor: 'red', spin: true }),
+                L.AwesomeMarkers.icon({ icon: 'coffee', prefix: 'fa', markerColor: 'red', iconColor: '#f28f82' }),
+                L.AwesomeMarkers.icon({ icon: 'cog', prefix: 'fa', markerColor: 'purple', iconColor: 'black' }),
+                L.AwesomeMarkers.icon({ icon: 'glass', prefix: 'fa', markerColor: 'green' }),
+                L.AwesomeMarkers.icon({ icon: 'shopping-cart', prefix: 'fa', markerColor: 'blue' }),
+                L.AwesomeMarkers.icon({ icon: 'info', prefix: 'fa', markerColor: 'orange' }),
+                L.AwesomeMarkers.icon({ icon: 'group', prefix: 'fa', markerColor: 'darkred' }),
+                L.AwesomeMarkers.icon({ icon: 'arrow-right', prefix: 'fa', markerColor: 'darkblue' }),
+                L.AwesomeMarkers.icon({ icon: 'twitter', prefix: 'fa', markerColor: 'cadetblue' }),
+                L.AwesomeMarkers.icon({ icon: 'phone', prefix: 'fa', markerColor: 'darkpurple' }),
+                L.AwesomeMarkers.icon({ icon: 'ambulance', prefix: 'fa', markerColor: 'darkgreen' }),
+                L.AwesomeMarkers.icon({ icon: 'medkit', prefix: 'fa', markerColor: 'darkblue' }),
+            ]
+            function addZero(number, n) {
+                return (Array(n).join(0) + number).slice(-n);
+            }
+            let randName = (num) => {
+                return ['我是断面-', '我是污染源-'][parseInt(Math.random() * 2)] + addZero(num, 4);
+            }
+
+            for (let i = 0; i < 100; i++) {
+                let ln = [44.268805, 125.672607];
+                ln[0] += Math.random() * 0.2 * [1, -1][parseInt(Math.random() * 2)];
+                ln[1] += Math.random() * 0.2 * [1, -1][parseInt(Math.random() * 2)];
+                let marker = L.marker(ln, {
+                    icon: icons[parseInt((Math.random() * (icons.length)))]
+                }).addTo(map);
+                marker.bindPopup(randName(count++));
+                allMarkers.push(marker);
+            }
+        }
+
+        control = L.control();
+        control.onAdd = () => {
+            this._div = L.DomUtil.create('div');
+            this._div.innerHTML = `
+                <button onclick="loadManyMarkers();(window.event || arguments.callee.caller.arguments[0]).stopPropagation()">加载很多断面和污染源</button>
+            `
+            return this._div;
+        }
+        control.addTo(map);
+    }
+
+    function setBuffer(map) {
+        // FeatureGroup is to store editable layers
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+        var drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems
+            }
+        });
+        map.addControl(drawControl);
+
+        let allSlider = [];
+        map.on('draw:created', (e) => {
+            const { layerType, layer } = e;
+
+            if (layerType === 'marker') {
+                layer.bindPopup('A popup!');
+            }
+
+            drawnItems.addLayer(layer);
+
+            const buffered = turf.buffer(layer.toGeoJSON(), 400, {
+                units: 'meters'
+            });
+            let geojson = L.geoJSON(buffered, {
+                style: function (feature) {
+                    return {
+                        color: 'red'
+                    };
+                }
+            }).addTo(map);
+
+            allSlider.forEach(i => {
+                i.options.value = i.value || 400;
+                i.remove();
+            })
+            let slid = L.control.slider((v) => {
+                let i = turf.buffer(layer.toGeoJSON(), v, {
+                    units: 'meters'
+                });
+                if (i && i.geometry && i.geometry.coordinates) {
+                    geojson.clearLayers();
+                    window.geo = geojson;
+                    geojson.addData(i);
+                }
+            }, {
+                position: 'topleft',
+                collapsed: false,
+                value: 400,
+                min: 100,
+                max: 5000,
+                logo: '调整缓冲区大小',
+                orientation: 'vertical',
+            }).addTo(map);
+            geojson.slid = slid;
+            allSlider.push(slid);
+
+
+
+            geojson.on('click', () => {
+                allSlider.forEach(i => {
+                    i.options.value = i.value || 400;
+                    i.remove();
+                })
+                slid.addTo(map);
+            });
+
+            window.findPoints = () => {
+                let n = `<ul>`;
+                allMarkers.forEach((i, index) => {
+                    let rlt = turf.booleanContains(geojson.toGeoJSON().features[0], i.toGeoJSON());
+                    window.fitPooo = (index) => {
+                        console.log(index);
+                        index = parseInt(index);
+                        map.flyTo([allMarkers[index].getLatLng()['lat'], allMarkers[index].getLatLng()['lng']], 15);
+                        allMarkers[index].openPopup();
+                    }
+                    if (rlt) {
+                        window.xx = i;
+                        n += `<li style="font-size: 10px; cursor: pointer;" onclick="fitPooo(${index})">${i.getPopup().getContent()} --点击定位</li>`
+                    }
+
+                });
+                n += `</ul>`;
+                document.getElementById('profile_c').innerHTML = n;
+                sidebar.open('profile');
+            }
+
+            geojson.bindPopup(`<div>
+                    <div>拖动左边滑块改变缓冲区大小</div>
+                    <button onclick="findPoints()">点我分析该区域内的污染源和断面</button>
+                    <div>左下角会展示列表</div>
+                </div>`, {
+                autoClose: false,
+                closeOnClick: false,
+            }).openPopup();
+        });
+
+    }
+
+    function findHowManyPointInPoly() {
+
+    }
+
+    setLayers(map);
+    setControl(map);
+    setBuffer(map);
+    var sidebar = L.control.sidebar('sidebar').addTo(map).open('home');
+</script>

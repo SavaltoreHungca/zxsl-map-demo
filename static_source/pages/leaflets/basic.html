@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/static/leaflet.1.7.1.css" />
+<link rel="stylesheet" href="/static/leaflet_measure_path.css" />
+<link rel="stylesheet" href="/static/leaflet_minimap.css" />
+<link rel="stylesheet" href="/static/leaflet_geosearch.css" />
+<link rel="stylesheet" href="/static/leaflet_box_zoom.css" />
+<link rel="stylesheet" href="/static/ionicons.css" />
+<link rel="stylesheet" href="/static/leaflet_awsome_marker.css" />
+<link rel="stylesheet" href="/static/font-awesome-4.7.0/css/font-awesome.css" />
+
+<script src="/static/leaflet-src.js"></script>
+<!-- <script src="/static/leaflet1.7.1.min.js"></script> -->
+<script src="/static/turf6.5.0.js"></script>
+<script src="/static/axios.js"></script>
+<script src="/static/leaflet_measure_path.js"></script>
+<script src="/static/leaflet_editable.js"></script>
+<script src="/static/leaflet_dash_flow.js"></script>
+<script src="/static/leaflet_river.js"></script>
+<script src="/static/d3.min.js"></script>
+<script src="/static/topojson.min.js"></script>
+<script src="/static/global_minimap.js"></script>
+<script src="/static/leaflet_minimap.js"></script>
+<script src="/static/leaflet_geosearch.js"></script>
+<script src="/static/leaflet_box_zoom.js"></script>
+<script src="/static/leaflet_awsome_marker.js"></script>
+
+
+<style>
+    html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+
+    button {
+        margin: 1px;
+    }
+
+    .leaflet-cursor-pointer {
+        cursor: default;
+        /* cursor:url('../images/myCursor.png'), auto} */
+    }
+
+    .mypopup .leaflet-popup-content-wrapper {
+        width: 33px;
+        height: 33px;
+        border-radius: 50%;
+        border: 55px solid rgb(83, 115, 145);
+        background-color: rgba(0, 0, 0, 0.24);
+    }
+
+    .mypopup .leaflet-popup-content {
+        left: -26px;
+        top: -22px;
+        position: absolute;
+    }
+
+    .mypopup .leaflet-popup-close-button {
+        left: 61px;
+        top: 60px !important;
+        font-size: 28px !important;
+        color: black !important;
+    }
+
+    .cd-span {
+        position: absolute;
+        width: 30px;
+        font-size: 14px;
+        text-align: center;
+        line-height: 15px;
+        cursor: pointer;
+    }
+
+    .cd-span:nth-child(1) {
+        color: #fff;
+        top: 13px;
+        left: 65px;
+    }
+
+    .cd-span:nth-child(1):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(1):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(40px, 41px, 0px) rotate(-33deg);
+    }
+
+    .cd-span:nth-child(2) {
+        color: #fff;
+        top: 92px;
+        left: 20px;
+    }
+
+    .cd-span:nth-child(2):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(2):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-6px, -39px, 0px) rotate(30deg);
+    }
+
+    .cd-span:nth-child(3) {
+        color: #fff;
+        top: 92px;
+        left: 110px;
+    }
+
+    .cd-span:nth-child(3):active {
+        color: rgb(152, 199, 218);
+    }
+
+    .cd-span:nth-child(3):before {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 1px;
+        border-bottom: 1px dashed rgb(180, 193, 204);
+        transform: translate3d(-50px, 40px, 0px) rotate(-90deg);
+    }
+</style>
+
+<div id="map" style="height: 100%; width: 100%;"></div>
+
+<script>
+    var mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    var addAnchor = false;
+    var addCircle = false;
+    var drawRegion = false;
+
+    var map = L.map('map', {
+        // center: [43.766631, 125.37735],
+        center: [29.556734, 106.54541],
+        zoom: 12,
+        attributionControl: false,
+        editable: true,
+    });
+    L.DomUtil.addClass(map._container, 'leaflet-cursor-pointer');
+    map.createPane("regionsPane");
+    map.createPane("waterPane");
+    map.createPane("tipsPane");
+    map.createPane("topPane");
+
+    function setLayers(map) {
+        var streets = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1, });
+        var wmsWater = L.tileLayer.wms("http://119.84.240.12:8096/geoserver/changchun-water/wms?", {
+            layers: 'changchun-water:长春测试水系',
+            format: 'image/png',
+            transparent: true,
+            pane: "waterPane",
+        });
+        window.addStreetsLayer = () => {
+            grayscale.remove();
+            streets.addTo(map);
+            layers._update();
+        }
+        var grayscale = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, });
+        var isWaterLayerMounted = false;
+        var isWaterLayerStartFlow = false;
+        var isStreetsLayerMounted = false;
+        let setRegionsLayer = () => {
+            var popup = L.popup({
+                pane: "tipsPane",
+                className: "mypopup",
+                autoClose: false,
+                closeOnClick: false,
+            })
+            window.openCustomPop = () => {
+                popup
+                    .setLatLng([44.170385, 124.085083])
+                    .setContent(
+                        `<span class="cd-span" onclick="addWaterLayer(this)">${isWaterLayerMounted ? "隐藏水系" : "显示水系"
+                        }</span>
+                        <span class="cd-span" onclick="addStreetsLayer()">街道图层</span>
+                        <span class="cd-span">实时状态</span>`
+                    )
+                    .openOn(map);
+            }
+            let geoLayer = L.geoJson(null, {
+                pane: "regionsPane",
+                onEachFeature: (feature, layer) => {
+                    layer.on({
+                        mouseover: function (e) {
+                            var layer = e.target;
+
+                            layer.setStyle({
+                                weight: 5,
+                                color: '#666',
+                                dashArray: '',
+                                fillOpacity: 0.7,
+                                zIndexOffset: 1,
+                            });
+
+                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                layer.bringToFront();
+                            }
+                        },
+                        mouseout: function (e) {
+                            geoLayer.fitStyle();
+                        },
+                        click: function (e) {
+                            map.fitBounds(e.target.getBounds());
+                        }
+                    });
+                }
+            });
+            geoLayer.on('add', () => {
+                grayscale.addTo(map);
+                layers._update();
+                map.flyTo([44.268805, 125.672607], 8);
+                setTimeout(() => {
+                    window.openCustomPop();
+                });
+
+            });
+            geoLayer.fitStyle = () => {
+                let index = -1;
+                geoLayer.setStyle((feature) => {
+                    let getColor = (d) => {
+                        let colors = ['#800026', '#BD0026', '#E31A1C', '#FC4E2A', '#FD8D3C', '#FEB24C', '#FED976', '#FFEDA0'];
+                        if (index >= colors.length) {
+                            index = -1;
+                        }
+                        index++;
+                        return colors[index];
+                    }
+                    return {
+                        fillColor: getColor(feature),
+                        weight: 2,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.7,
+                        zIndexOffset: 1,
+                    };
+                });
+            };
+
+            axios.get("/jd")
+                .then(rsp => {
+                    geoLayer.addData(rsp.data);
+                    geoLayer.fitStyle();
+                });
+            return geoLayer;
+        }
+
+        var regionLayer = setRegionsLayer();
+        window.addRegionLayer = () => {
+            regionLayer.addTo(map);
+        }
+        let setWaterLayer = () => {
+            let geoLayer = L.geoJson(null, {
+                pane: "waterPane",
+            });
+            geoLayer.fitStyle = () => {
+                geoLayer.setStyle((feature) => {
+                    return {
+                        zIndexOffset: 99,
+                    };
+                });
+            }
+            geoLayer.on('add', () => {
+                map.setView([44.268805, 125.672607], 8);
+                grayscale.addTo(map);
+                layers._update();
+                isWaterLayerMounted = true;
+                if (!isBadFiveTipOpen && popupLayerGeoJson) {
+                    setTimeout(() => {
+                        let t = popupLayerGeoJson.bindPopup("劣Ⅴ类水质(鼠标悬浮河流上河流会流动2秒(当然得是点击了停止流动的情况下))", {
+                            autoClose: false,
+                            closeOnClick: false,
+                        }).openPopup();
+                    }, 1000)
+                    isBadFiveTipOpen = true;
+                }
+            });
+            geoLayer.on('remove', () => {
+                isWaterLayerMounted = false;
+                isBadFiveTipOpen = false;
+            });
+            axios.get("/jd1")
+                .then(rsp => {
+                    geoLayer.addData(rsp.data);
+                    geoLayer.fitStyle();
+                });
+
+            let allLayer = [];
+            let popupLayerGeoJson = null;
+            window.makeRiverFlow = () => {
+                allLayer.forEach(layer => {
+                    if (!layer.options['dashArray']) {
+                        layer.options['dashArray'] = '15 15';
+                        layer.options['dashSpeed'] = 30;
+                        layer.beforeAdd(map);
+                    }
+                })
+            }
+            window.makeRiverStopFlow = () => {
+                allLayer.forEach(layer => {
+                    if (layer.options['dashArray']) {
+                        layer.options['dashArray'] = '';
+                        layer.options['dashSpeed'] = 0;
+                        layer.beforeAdd(map);
+                    }
+                })
+            }
+            window.isClickLetRiverFlow = false;
+            window.latestTimeout1 = null;
+            window.isBadFiveTipOpen = false;
+            let geoLayer1 = L.geoJson(null, {
+                pane: "waterPane",
+                onEachFeature: (feature, layer) => {
+                    if (feature.properties.name === '伊通河') {
+                        popupLayerGeoJson = layer;
+                    }
+                    allLayer.push(layer);
+                    layer.on({
+                        mouseover: function (e) {
+                            makeRiverFlow();
+                        },
+                        mouseout: function (e) {
+                            if (!isClickLetRiverFlow) {
+                                if (latestTimeout1) {
+                                    clearTimeout(latestTimeout1);
+                                }
+                                latestTimeout1 = setTimeout(() => {
+                                    if (!isClickLetRiverFlow) {
+                                        makeRiverStopFlow();
+                                    }
+                                }, 2000);
+                            }
+                        },
+                    });
+                }
+            });
+            geoLayer1.fitStyle = () => {
+                geoLayer1.setStyle((feature) => {
+                    if (feature.properties.name === '伊通河') {
+                        return {
+                            fillColor: 'red',
+                            color: 'red',
+                        }
+                    }
+                    return {
+                        zIndexOffset: 99,
+                    };
+                });
+            }
+            axios.get("/jd2")
+                .then(rsp => {
+                    geoLayer1.addData(rsp.data);
+                    geoLayer1.fitStyle();
+                });
+
+            let ans = L.layerGroup([wmsWater, geoLayer, geoLayer1]);
+            return ans;
+        }
+
+        var waterLayer = setWaterLayer();
+
+        var layers = L.control.layers(
+            {
+                "街道图": streets,
+                "灰度图": grayscale,
+            },
+            {
+                "长春行政区划": regionLayer.setZIndex(2),
+                "长春水系": waterLayer.setZIndex(6),
+            },
+            {
+                collapsed: false,
+                autoZIndex: false,
+            }
+        );
+
+        map.addLayer(streets);
+        layers.addTo(map);
+        window.addWaterLayer = (ele) => {
+            if (!isWaterLayerMounted) {
+                ele.innerText = '隐藏水系'
+                waterLayer.addTo(map);
+            } else {
+                ele.innerText = '显示水系'
+                waterLayer.remove();
+            }
+        }
+        window.addWaterLayer2 = (ele) => {
+            if (!isWaterLayerStartFlow) {
+                ele.innerText = '停止流动'
+                waterLayer.addTo(map);
+                makeRiverFlow();
+                isClickLetRiverFlow = true;
+            } else {
+                ele.innerText = '河流流动(河流水质渲染)'
+                makeRiverStopFlow();
+                isClickLetRiverFlow = false;
+            }
+            isWaterLayerStartFlow = !isWaterLayerStartFlow;
+        }
+
+    }
+
+    function setClick(map) {
+        var popup = L.popup();
+        var regionPoints = [];
+        var latestTimeout = null;
+        map.on('click', (e) => {
+            if (drawRegion) {
+                var circle = L.circle([
+                    e.latlng.lat,
+                    e.latlng.lng
+                ], {
+                    color: 'blue',
+                    fillColor: '#f03',
+                    fillOpacity: 0.5,
+                    radius: 30,
+                    pane: "topPane",
+                }).addTo(map);
+                regionPoints.push(circle);
+                if (latestTimeout) {
+                    clearTimeout(latestTimeout);
+                }
+                latestTimeout = setTimeout(() => {
+                    var polygon = L.polygon(regionPoints.map(it => [it._latlng.lat, it._latlng.lng]),
+                        {
+                            showMeasurements: true,
+                            measurementOptions: { showOnHover: false },
+                            pane: "topPane",
+                        }
+                    )
+                        .addTo(map);
+                    polygon.enableEdit();
+                    map.on('editable:vertex:drag editable:vertex:deleted', polygon.updateMeasurements, polygon);
+                    regionPoints.forEach(it => it.remove());
+                    regionPoints = [];
+
+                    drawRegion = false;
+                    if (document.getElementById('startDrawoRegion')) {
+                        document.getElementById('startDrawoRegion').innerText = '开启绘制区域(点击多个点后等两秒)';
+                    }
+                }, 2000)
+            } else if (addCircle) {
+                var circle = L.circle([
+                    e.latlng.lat,
+                    e.latlng.lng
+                ], {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.5,
+                    radius: 20,
+                    pane: "topPane",
+                }).addTo(map);
+            } else if (addAnchor) {
+                var marker = L.marker([
+                    e.latlng.lat,
+                    e.latlng.lng
+                ], {
+                    icon: L.icon({
+                        iconUrl: '/static/images/leaf-orange.png',
+                        shadowUrl: '/static/images/leaf-shadow.png',
+
+                        iconSize: [38, 95], // size of the icon
+                        shadowSize: [50, 64], // size of the shadow
+                        iconAnchor: [22, 94], // point of the icon which will correspond to marker's location
+                        shadowAnchor: [4, 62],  // the same for the shadow
+                        popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+                    })
+                }).addTo(map).bindPopup("我是自定义的");
+            } else {
+                popup
+                    .setLatLng(e.latlng)
+                    .setContent(e.latlng.toString())
+                    .openOn(map);
+            }
+        });
+    }
+
+    function measure(map) {
+
+        // 避免多次drawing
+        if (this.drawing) {
+            return
+        }
+
+        // interactive = false 避免用户双击map无效
+        const layer = L.polyline([], {
+            interactive: false,
+            pane: "topPane",
+        }).addTo(map)
+            .showMeasurements();
+
+        this.layer = layer;
+
+        // 绘制mousemove line
+        const tempLayer = L.polyline([], {
+            interactive: false,
+            pane: "topPane",
+        }).addTo(map).showMeasurements();
+        let tempPoints = [];
+
+        // 结束绘制
+        const remove = () => {
+            layer.remove();
+            popup.remove();
+            dblclickHandler();
+        };
+
+        // popup 展示距离
+        const popup = L.popup({
+            autoClose: false,
+            closeButton: false
+        });
+
+        // 自定义 展示框
+        const setTipText = content => {
+            const el = document.createElement("div");
+            el.className = "measure-marker";
+
+            const text = document.createElement("span");
+            text.className = "measure-text";
+            text.innerHTML = content;
+
+            const close = document.createElement("span");
+            close.className = "measure-close";
+
+            close.addEventListener("click", () => {
+                remove();
+            });
+
+            el.appendChild(text);
+            el.appendChild(close);
+
+            return el;
+        };
+
+        const clickHandler = e => {
+            layer.addLatLng(e.latlng).showMeasurements();
+            tempPoints[0] = e.latlng;
+            this.drawing = true
+            map.doubleClickZoom.disable()
+
+            const len = turf.length(layer.toGeoJSON(), { units: "kilometers" });
+
+            popup
+                .setLatLng(e.latlng)
+                .setContent(setTipText(len.toFixed(2) + " 公里"))
+                .openOn(map);
+        };
+
+        const mousemoveHandler = e => {
+            if (tempPoints.length) {
+                layer.updateMeasurements();
+                tempPoints[1] = e.latlng;
+                tempLayer.setLatLngs(tempPoints);
+            }
+        };
+
+        // 双击结束， 移除事件是良好的编程习惯
+        const dblclickHandler = e => {
+            tempPoints = null;
+            tempLayer.remove();
+            this.drawing = false
+            map.doubleClickZoom.enable()
+
+            map.off("click", clickHandler);
+            map.off("mousemove", mousemoveHandler);
+            map.off("dblclick", dblclickHandler);
+            layer.updateMeasurements();
+        };
+
+        map.on("click", clickHandler);
+        map.on("mousemove", mousemoveHandler);
+        map.on("dblclick", dblclickHandler);
+    }
+
+    function setControl(map) {
+        var control = L.control({
+            position: 'topleft'
+        });
+        control.onAdd = function (map) {
+            this._div = L.DomUtil.create('div');
+            this.update();
+            return this._div;
+        }
+        control.update = function () {
+            this._div.innerHTML = `
+                <div style="
+                    padding: 10px;
+                    position: absolute;
+                    width: 500px;
+                    top: -84px !important;
+                    left: 44px;
+                " onclick="(window.event || arguments.callee.caller.arguments[0]).stopPropagation()">
+                    <button
+                        onclick="addAnchor=!addAnchor; addAnchor?this.innerText = '停止添加自定义marker' : this.innerText = '添加自定义marker'">添加自定义marker</button>
+                    <button style="display: none" onclick="addCircle=!addCircle; addCircle?this.innerText = '关闭添加圆' : this.innerText = '开启添加圆'">开启添加圆</button>
+                    <button id="startDrawoRegion"
+                        onclick="drawRegion=!drawRegion; drawRegion?this.style.cssText = 'color: red': null; drawRegion? this.innerText = '停止进行区域绘制' : this.innerText = '开启绘制区域(点击多个点后等两秒)'">开启绘制区域(点击多个点后等两秒)</button>
+                    <button onclick="measure(map)">测距(双击结束)</button>
+                    <button onclick="addRegionLayer()">叠加图层</button>
+                    <button onclick="openCustomPop()">自定义弹框</button>
+                    <button onclick="addWaterLayer2(this)">河流流动(河流水质渲染)</button>
+                </div>
+            `;
+        }
+        control.addTo(map);
+
+        // var miniMap = new L.Control.GlobeMiniMap({
+        //     topojsonSrc: '/static/world.json'
+        // }).addTo(map);
+        new L.Control.MiniMap(L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, })).addTo(map);
+
+        L.Control.boxzoom({ position: 'topleft' }).addTo(map);
+        control = L.control({
+            position: 'topleft'
+        });
+        control.onAdd = function (map) {
+            this._div = L.DomUtil.create('div');
+            this._div.innerHTML = `
+                <button onclick="map.setView([29.556734, 106.54541]); (window.event || arguments.callee.caller.arguments[0]).stopPropagation()">一键原点</button>
+            `
+            return this._div;
+        }
+        control.addTo(map);
+
+
+        control = L.control({
+            position: 'topleft'
+        });
+        control.onAdd = function (map) {
+            this._div = L.DomUtil.create('div');
+            this._div.innerHTML = `
+                <button onclick="loadManyPoints();map.setView([30.235341, 106.990356], 9); (window.event || arguments.callee.caller.arguments[0]).stopPropagation()">加载很多断面和污染源</button>
+            `
+            return this._div;
+        }
+        window.loadManyPoints = () => {
+            let icons = [
+                L.AwesomeMarkers.icon({ icon: 'spinner', prefix: 'fa', markerColor: 'red', spin: true }),
+                L.AwesomeMarkers.icon({ icon: 'coffee', prefix: 'fa', markerColor: 'red', iconColor: '#f28f82' }),
+                L.AwesomeMarkers.icon({ icon: 'cog', prefix: 'fa', markerColor: 'purple', iconColor: 'black' }),
+                L.AwesomeMarkers.icon({ icon: 'glass', prefix: 'fa', markerColor: 'green' }),
+                L.AwesomeMarkers.icon({ icon: 'shopping-cart', prefix: 'fa', markerColor: 'blue' }),
+                L.AwesomeMarkers.icon({ icon: 'info', prefix: 'fa', markerColor: 'orange' }),
+                L.AwesomeMarkers.icon({ icon: 'group', prefix: 'fa', markerColor: 'darkred' }),
+                L.AwesomeMarkers.icon({ icon: 'arrow-right', prefix: 'fa', markerColor: 'darkblue' }),
+                L.AwesomeMarkers.icon({ icon: 'twitter', prefix: 'fa', markerColor: 'cadetblue' }),
+                L.AwesomeMarkers.icon({ icon: 'phone', prefix: 'fa', markerColor: 'darkpurple' }),
+                L.AwesomeMarkers.icon({ icon: 'ambulance', prefix: 'fa', markerColor: 'darkgreen' }),
+                L.AwesomeMarkers.icon({ icon: 'medkit', prefix: 'fa', markerColor: 'darkblue' }),
+            ]
+            function addZero(number, n) {
+                return (Array(n).join(0) + number).slice(-n);
+            }
+            let randName = (num) => {
+                return ['我是断面-', '我是污染源-'][parseInt(Math.random() * 2)] + addZero(num, 4);
+            }
+
+            for (let i = 0; i < 100; i++) {
+                let ln = [29.556734, 106.54541];
+                ln[0] += Math.random() * 2;
+                ln[1] += Math.random() * 2;
+                L.marker(ln, {
+                    icon: icons[parseInt((Math.random() * (icons.length)))]
+                }).addTo(map).bindPopup(randName(i + 1));
+            }
+        }
+        control.addTo(map);
+
+        // L.marker([29.556734, 106.54541], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
+        L.marker([29.556734, 106.54541], { icon: L.AwesomeMarkers.icon({ icon: 'coffee', prefix: 'fa', markerColor: 'red', iconColor: '#f28f82' }) })
+            .addTo(map)
+            .bindPopup("你点击了我！");
+    }
+
+    function queryPosition(map) {
+        let provider = new GeoSearch.OpenStreetMapProvider();
+
+        window.queryLL = (v) => {
+            provider.search({ query: v })
+                .then((rsp) => {
+                    console.log(rsp);
+                    p2222.innerHTML = '';
+                    if (rsp) {
+                        rsp.forEach(i => {
+                            p2222.innerHTML += `
+                                <li style="cursor: pointer" onclick="map.flyTo([${i.y},${i.x}], 6); L.marker([${i.y},${i.x}]).addTo(map).bindPopup('${i.label}').openPopup()">${i.label}</li>
+                            `
+                        });
+                    }
+                });
+        }
+        var control = L.control({
+            position: 'topleft'
+        });
+        control.onAdd = function (map) {
+            this._div = L.DomUtil.create('div');
+            this._div.onclick = () => {
+                (window.event || arguments.callee.caller.arguments[0]).stopPropagation();
+            }
+            this._div.style.cssText = `
+
+            `;
+            this._div.innerHTML = `
+                <div><input onchange="queryLL(this.value)"><button>查位置</button></div>
+                <div style="cursor: pointer; background: white; width: 176px;">
+                    <ul id="p2222"></ul>
+                </div>
+            `;
+            return this._div;
+        }
+        control.addTo(map);
+    }
+
+    setClick(map);
+    setLayers(map);
+    setControl(map);
+    queryPosition(map);
+</script>

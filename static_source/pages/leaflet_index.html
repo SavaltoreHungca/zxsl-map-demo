@@ -1,0 +1,61 @@
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="applicable-device" content="pc,mobile"> <!-- 设置头信息 -->
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+
+    <link rel="stylesheet" type="text/css" href="/static/comn.css">
+    <link rel="stylesheet" type="text/css" href="/static/element.2.15.1.css">
+    <link rel="stylesheet" type="text/css" href="/static/vant.css">
+    <link rel="stylesheet" type="text/css" href="/static/xterm.css">
+    <link rel="stylesheet" type="text/css" href="/static/jsxGraph.css">
+
+    <script src="/static/axios.js"></script>
+    <script src="/static/vue.2.6.12.js"></script>
+    <script src="/static/vant.js"></script>
+    <script src="/static/element.2.15.1.js"></script>
+    <script src="/static/echarts.5.1.2.min.js"></script>
+    <script src="/static/comn.js"></script>
+    <script src="/static/jsxGraph.js"></script>
+    <script src="/static/vs/loader.js"></script>
+    <style>
+        .el-collapse-item__header {
+            height: inherit !important;
+            line-height: inherit !important;
+            background-color: whitesmoke;
+        }
+    </style>
+</head>
+
+<div id="app" style="display: flex; flex-direction: column;">
+    <div id="header" style="padding: 1px; border-bottom: 1px solid black;">
+        <el-button style="margin: 2px;" type="primary" @click="handleChange('basic.html')">基本</el-button>
+        <el-button style="margin: 2px;" type="primary" @click="handleChange('buffer.html')">缓冲区分析</el-button>
+        <el-button style="margin: 2px;" type="primary" @click="handleChange('topo.html')">拓扑关系分析</el-button>
+        <el-button style="margin: 2px;" type="primary" @click="handleChange('manyMarker.html')">超大量点位加载和轨迹动画(自定义插件)</el-button>
+        <el-button style="margin: 2px;" type="primary" @click="handleChange('cz.html')">插值渲染(自定义插件)</el-button>
+    </div>
+    <div style="flex-grow: 1;">
+        <iframe id="content" src="/static/pages/leaflets/basic.html" name="" frameborder="0" style="width: 100%; height: 100%;"></iframe>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                
+            };
+        },
+        methods: {
+            handleChange(value) {
+                document.getElementById('content')
+                    .src = "/static/pages/leaflets/" + value;
+            }
+        }
+    })
+</script>

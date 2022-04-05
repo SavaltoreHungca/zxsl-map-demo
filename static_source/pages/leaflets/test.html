@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+    <div id="cont"></div>
+</body>
+
+</html>
+<script>
+    // 将hex表示方式转换为rgb表示方式(这里返回rgb数组模式)
+    let colorRgb = function (sColor) {
+        let reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+        sColor = sColor.toLowerCase();
+        if (sColor && reg.test(sColor)) {
+            if (sColor.length === 4) {
+                let sColorNew = "#";
+                for (let i = 1; i < 4; i += 1) {
+                    sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
+                }
+                sColor = sColorNew;
+            }
+            //处理六位的颜色值
+            let sColorChange = [];
+            for (let i = 1; i < 7; i += 2) {
+                sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
+            }
+            return sColorChange;
+        } else {
+            return sColor;
+        }
+    };
+    // 将rgb表示方式转换为hex表示方式
+    let colorHex = function (rgb) {
+        let _this = rgb;
+        let reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+        if (/^(rgb|RGB)/.test(_this)) {
+            let aColor = _this.replace(/(?:\(|\)|rgb|RGB)*/g, "").split(",");
+            let strHex = "#";
+            for (let i = 0; i < aColor.length; i++) {
+                let hex = Number(aColor[i]).toString(16);
+                hex = hex < 10 ? 0 + '' + hex : hex;// 保证每个rgb的值为2位
+                if (hex === "0") {
+                    hex += hex;
+                }
+                strHex += hex;
+            }
+            if (strHex.length !== 7) {
+                strHex = _this;
+            }
+            return strHex;
+        } else if (reg.test(_this)) {
+            let aNum = _this.replace(/#/, "").split("");
+            if (aNum.length === 6) {
+                return _this;
+            } else if (aNum.length === 3) {
+                let numHex = "#";
+                for (let i = 0; i < aNum.length; i += 1) {
+                    numHex += (aNum[i] + aNum[i]);
+                }
+                return numHex;
+            }
+        } else {
+            return _this;
+        }
+    };
+
+    // 将颜色名字转为 rgb
+    let colorName2Rgb = function (colorName) {
+        let d = document.createElement('div');
+        d.style.cssText = `display: none; color: ${colorName}`;
+        document.body.appendChild(d);
+        let ans = window.getComputedStyle(d)['color'];
+        document.body.removeChild(d);
+        return ans;
+    }
+    /**
+    *
+    * @param startColor 指定起始颜色
+    * @param endColor   指定结束颜色
+    * @param step       划分渐变色区域数量
+    * @returns {Array}  返回渐变色数组
+    */
+    let gradientColor = function (startColor, endColor, step) {
+
+        if (startColor.toLowerCase().startsWith("rgb")) {
+            startColor = colorHex(startColor);
+        } else if (startColor.toLowerCase().startsWith("#")) {
+            startColor = startColor;
+        } else {
+            startColor = colorHex(colorName2Rgb(startColor));
+        }
+
+        if (endColor.toLowerCase().startsWith("rgb")) {
+            endColor = colorHex(startColor);
+        } else if (endColor.toLowerCase().startsWith("#")) {
+            endColor = endColor;
+        } else {
+            endColor = colorHex(colorName2Rgb(endColor));
+        }
+
+        let startRGB = colorRgb(startColor);//转换为rgb数组模式;
+        let endRGB = colorRgb(endColor);
+        let startR = startRGB[0];
+        let startG = startRGB[1];
+        let startB = startRGB[2];
+        let endR = endRGB[0];
+        let endG = endRGB[1];
+        let endB = endRGB[2];
+
+        let sR = (endR - startR) / step;//总差值
+        let sG = (endG - startG) / step;
+        let sB = (endB - startB) / step;
+
+        let colorArr = [];
+        for (let i = 0; i < step; i++) {
+            //计算每一步的hex值
+            let hex = colorHex('rgb(' + parseInt((sR * i + startR)) + ',' + parseInt((sG * i + startG)) + ',' +
+                parseInt((sB * i + startB)) + ')');
+            colorArr.push(hex);
+        }
+        return colorArr;
+    };
+
+    //渐变色算法例子
+    let color_list = gradientColor("red", "blue", 300);
+    color_list.forEach(function (color, index) {
+        document.getElementById('cont').innerHTML += `
+            <div style="width: 70px; height: 20px; background: ${color}"></div>
+        `
+    });
+</script>

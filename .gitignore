@@ -1,0 +1,29 @@
+**/node_module/
+**/__pycache__/
+
+temp
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+**/out
+overlays/
+
+# Mac
+.DS_Store
+
+# Maven
+**/log/
+**/target
+**/*.log
+**/tmp
+**/.tmp
+
+# vscode
+.vscode

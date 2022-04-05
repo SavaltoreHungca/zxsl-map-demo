@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/static/leaflet.1.7.1.css" />
+<link rel="stylesheet" href="/static/leaflet_measure_path.css" />
+<link rel="stylesheet" href="/static/leaflet_minimap.css" />
+<link rel="stylesheet" href="/static/leaflet_geosearch.css" />
+<link rel="stylesheet" href="/static/leaflet_box_zoom.css" />
+<link rel="stylesheet" href="/static/ionicons.css" />
+<link rel="stylesheet" href="/static/leaflet_awsome_marker.css" />
+<link rel="stylesheet" href="/static/font-awesome-4.7.0/css/font-awesome.css" />
+<link rel="stylesheet" href="/static/leaflet.draw-src.css" />
+<link rel="stylesheet" href="/static/leaflet_slider.css" />
+<link rel="stylesheet" href="/static/leaflet_sliderbar.css" />
+
+<script src="/static/leaflet-src.js"></script>
+<!-- <script src="/static/leaflet1.7.1.min.js"></script> -->
+<script src="/static/turf6.5.0.js"></script>
+<script src="/static/axios.js"></script>
+<script src="/static/leaflet_measure_path.js"></script>
+<script src="/static/leaflet_editable.js"></script>
+<script src="/static/leaflet_dash_flow.js"></script>
+<script src="/static/leaflet_river.js"></script>
+<script src="/static/d3.min.js"></script>
+<script src="/static/topojson.min.js"></script>
+<script src="/static/global_minimap.js"></script>
+<script src="/static/leaflet_minimap.js"></script>
+<script src="/static/leaflet_geosearch.js"></script>
+<script src="/static/leaflet_box_zoom.js"></script>
+<script src="/static/leaflet_awsome_marker.js"></script>
+<script src="/static/leaflet.draw-src.js"></script>
+<script src="/static/leaflet_buffer.js"></script>
+<script src="/static/leaflet_slider.js"></script>
+<script src="/static/leaflet_sliderbar.js"></script>
+<script src="/static/leaflet_horman.js"></script>
+<script src="/static/leaflet_glmarkers.js"></script>
+<script src="/static/manyMakers.js"></script>
+
+
+
+<style>
+    html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+
+    button {
+        margin: 1px;
+    }
+
+    .leaflet-cursor-pointer {
+        cursor: default;
+        /* cursor:url('../images/myCursor.png'), auto} */
+    }
+
+    .mypopup .leaflet-popup-content-wrapper {
+        width: 33px;
+        height: 33px;
+        border-radius: 50%;
+        border: 55px solid rgb(83, 115, 145);
+        background-color: rgba(0, 0, 0, 0.24);
+    }
+</style>
+
+<div id="map" style="height: 100%; width: 100%;"></div>
+<div id="sidebar" class="sidebar collapsed"
+    style="left: 8px;height: 207px;bottom: 4px;top: auto;border-radius: 11px 11px;">
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+            <li><a href="#profile" role="tab"><i class="fa fa-user"></i></a></li>
+            <li class="disabled"><a href="#messages" role="tab"><i class="fa fa-envelope"></i></a></li>
+        </ul>
+
+        <ul role="tablist">
+            <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+        </ul>
+    </div>
+
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+        <div class="sidebar-pane" id="home">
+            <h1 class="sidebar-header">
+                操作手册
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <p>
+                点击此处播放动画<button
+                    onclick="loadManyMarkers();(window.event || arguments.callee.caller.arguments[0]).stopPropagation()">播放动画</button>
+                </br>
+                点击点位能弹窗，多个点位重叠能识别多个。
+            </p>
+
+        </div>
+
+        <div class="sidebar-pane" id="profile">
+            <h1 class="sidebar-header">none<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            <div id="profile_c"></div>
+        </div>
+
+        <div class="sidebar-pane" id="messages">
+            <h1 class="sidebar-header">Messages<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+
+        <div class="sidebar-pane" id="settings">
+            <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            <p>无需任何设置！</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    var map = L.map('map', {
+        center: [29.555241, 106.543007],
+        zoom: 6,
+        attributionControl: false,
+        editable: true,
+        layers: [L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, { id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, })]
+    });
+    L.DomUtil.addClass(map._container, 'leaflet-cursor-pointer');
+
+    function getRandomLatLngs(center, len, range) {
+        range = range ? range : 3
+        let ans = [];
+        for (let i = 0; i < len; i++) {
+            ans.push({
+                latLng: [
+                    center[0] + range * Math.random() * [1, -1][parseInt(Math.random() * 2)],
+                    center[1] + range * Math.random() * [1, -1][parseInt(Math.random() * 2)],
+                ]
+            })
+        }
+        return ans;
+    }
+
+    let popup = L.popup();
+    let l = new L.ManyMarkers({
+        markers: getRandomLatLngs([29.555241, 106.543007], 10000, 20),
+        onclickMarker: (markers) => {
+            popup
+                .setLatLng(markers[0].latLng)
+                .setContent(`
+                    ${markers.length}个点位，
+                    经纬度分别为： ${markers.map(i => i.latLng + '</br>')}
+                `)
+                .openOn(map);
+        },
+        color: 'black',
+        size: 10,
+        interval: 2000,
+        lineColor: 'grey',
+        lineDash: [5, 5],
+    });
+    loadManyMarkers = () => {
+        map.setZoom(3);
+        setTimeout(()=>{l.togglePlay();}, 1000);
+    }
+    l.addTo(map);
+    var sidebar = L.control.sidebar('sidebar').addTo(map).open('home');
+</script>
